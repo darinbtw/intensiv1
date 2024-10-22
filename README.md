@@ -1,2 +1,8 @@
 # parcing-cian
- parcing home from cian
+Код с помощью которого можно парсить данные с сайта cian.ru
+# Установка
+Для установки зависимостей выполните команду:
+pip install -r requirements.txt
+# Запуск
+Для запуска приложения выполните команду:
+python main.py
