@@ -1,16 +1,20 @@
 import cianparser
-import pandas
+import pandas as pd
+import time
 
 moscow = cianparser.CianParser(location='Москва')
-data = moscow.get_flats(deal_type='sale', rooms=(3), additional_settings={'start_page': 1, 'end_page':1} )
-sorted_price = sorted(data, key=lambda x: x['price'])
+# data = moscow.get_flats(deal_type='sale', rooms=(1,2), additional_settings={'start_page': 4, 'end_page':100} )
+# sorted_price = sorted(data, key=lambda x: x['price'])
 # print(sorted_price)
 
-export_e
+data = []
+for i in range(1, 400):
+    a = moscow.get_flats(deal_type='sale', rooms=(1,2), additional_settings={'start_page': i, 'end_page':i} )
+    data.extend(a)
+    time.sleep(20)
 
-for apartment in sorted_price:
-    print(f'Автор: {apartment["author"]}  {apartment["author_type"]} Ссылка: {apartment["url"]} Локация: {apartment["location"]} '
-          f'Тип сортировки: {apartment["deal_type"]} {apartment["accommodation_type"]} Этаж: {apartment["floor"]} {apartment["floors_count"]} Квартира: {apartment["rooms_count"]} '
-          f'Всего метров: {apartment["total_meters"]} Цена: {apartment["price"]} Район: {apartment["district"]} Улица: {apartment["street"]} {apartment["house_number"]} '
-          f'{apartment["underground"]} {apartment["residential_complex"]}')
+exel_export = pd.DataFrame(data)
+columns = ['author', 'author_type', 'location', 'deal_type', 'accommodation_type', 'floors_count', 'rooms_count', 'total_meters', 'price', 'district', 'street', 'house_number', 'underground', 'residential_complex']
+selected_columns = exel_export[columns]
+selected_columns.to_csv('parcing_from cian', mode='a', header=False, index=False)
 
