@@ -7,13 +7,16 @@ cloudscraper==1.2.71
 DateTime==5.5
 idna==3.10
 lxml==5.3.0
+numpy==2.1.2
+pandas==2.2.3
 pyparsing==3.2.0
+python-dateutil==2.9.0.post0
 pytz==2024.2
 requests==2.32.3
 requests-toolbelt==1.0.0
-setuptools==75.2.0
 six==1.16.0
 soupsieve==2.6
 transliterate==1.10.2
+tzdata==2024.2
 urllib3==2.2.3
 zope.interface==7.1.0
