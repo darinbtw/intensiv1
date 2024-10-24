@@ -1,55 +1,68 @@
-import pandas as pd
-import os
 import cianparser
+import pandas as pd
+import time
+import logging
 
-# Функция для парсинга данных с ЦИАН
-def parse_cian():
-    cian = Cian()
-    
-    # Параметры поиска объявлений (например, квартиры на продажу)
-    results = cian.search(
-        deal_type='sale',           # Тип сделки: 'sale' - продажа
-        accommodation_type='flat',  # Тип жилья: квартира
-        region='Москва'             # Регион (например, Москва)
-    )
+# Настраиваем логирование для отслеживания ошибок и прогресса
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
+def parse_cian(location='Москва', deal_type='sale', rooms=(1, 2), start_page=1, end_page=20, retry_attempts=3, delay=10):
+    # Инициализация парсера
+    parser = cianparser.CianParser(location=location)
     data = []
+    
+    for page in range(start_page, end_page + 1):
+        attempt = 0
+        success = False
 
-    # Обработка результатов
-    for result in results:
-        data.append({
-            'author': result.get('author'),  # Продавец
-            'author_type': result.get('author_type'),  # Тип продавца (агент, частное лицо)
-            'location': result.get('location'),  # Полное местоположение
-            'deal_type': result.get('deal_type'),  # Тип сделки
-            'accommodation_type': result.get('accommodation_type'),  # Тип недвижимости (квартира, дом и т.д.)
-            'floors_count': result.get('floors_count'),  # Количество этажей
-            'rooms_count': result.get('rooms_count'),  # Количество комнат
-            'total_meters': result.get('total_meters'),  # Общая площадь в метрах
-            'price': result.get('price'),  # Цена
-            'district': result.get('district'),  # Район
-            'street': result.get('street'),  # Улица
-            'house_number': result.get('house_number'),  # Номер дома
-            'underground': result.get('underground'),  # Станция метро
-            'residential_complex': result.get('residential_complex')  # Жилой комплекс
-        })
+        # Повторные попытки при возникновении ошибки клиента
+        while attempt < retry_attempts and not success:
+            try:
+                # Получаем данные с текущей страницы
+                flats = parser.get_flats(deal_type=deal_type, rooms=rooms, with_extra_data=True,
+                                         additional_settings={'start_page': page, 'end_page': page})
+                data.extend(flats)
+                logging.info(f"Страница {page} успешно обработана. Найдено объектов: {len(flats)}")
+                success = True  # Помечаем успешное завершение
+            except Exception as e:
+                attempt += 1
+                logging.warning(f"Ошибка на странице {page}: {e}. Попытка {attempt} из {retry_attempts}")
+                time.sleep(delay)  # Задержка между повторными попытками
+
+        if not success:
+            logging.error(f"Не удалось загрузить данные со страницы {page} после {retry_attempts} попыток")
+
+        # Задержка между запросами, чтобы избежать блокировки
+        time.sleep(delay)
 
     return data
 
-# Функция для сохранения данных в CSV
-def save_to_csv(data, filename='output.csv'):
-    if os.path.exists(filename):
-        # Читаем существующий файл и добавляем новые данные
-        existing_data = pd.read_csv(filename)
-        new_data = pd.DataFrame(data)
-        combined_data = pd.concat([existing_data, new_data]).drop_duplicates()
+def export_to_csv(data, file_name='cian_parsing.csv', mode='a', header=False):
+    df = pd.DataFrame(data)
+    
+    # Список нужных столбцов
+    columns = ['author', 'author_type', 'url', 'location', 'deal_type', 'accommodation_type', 'floor', 'floors_count', 
+               'rooms_count', 'total_meters', 'price_per_month', 'commissions', 'price', 'year_of_construction', 
+               'object_type', 'house_material_type', 'heating_type', 'finish_type', 'living_meters', 'kitchen_meters', 
+               'phone', 'district', 'street', 'house_number', 'underground', 'residential_complex']
+    
+    # Проверка на наличие данных в колонках
+    if not df.empty:
+        selected_columns = df[columns] if set(columns).issubset(df.columns) else df
+        selected_columns.to_csv(file_name, mode=mode, header=header, index=False)
+        logging.info(f"Данные успешно экспортированы в {file_name}")
     else:
-        # Если файл не существует, создаём новый
-        combined_data = pd.DataFrame(data)
+        logging.warning("Нет данных для экспорта")
 
-    # Сохраняем данные в CSV без индексов
-    combined_data.to_csv(filename, index=False)
+if __name__ == "__main__":
+    # Параметры для парсинга
+    start_page = 1
+    end_page = 2
+    deal_type = 'sale'  # Тип сделки: продажа
+    rooms = (1, 2)      # Количество комнат
 
-# Основной код
-parsed_data = parse_cian()
-save_to_csv(parsed_data)
+    # Парсинг данных
+    data = parse_cian(location='Москва', deal_type=deal_type, rooms=rooms, start_page=start_page, end_page=end_page)
+
+    # Экспорт данных в CSV
+    export_to_csv(data, file_name='parsed.csv', mode='a', header=True)
