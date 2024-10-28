@@ -2,6 +2,7 @@ import cianparser
 import csv
 import time
 import random
+import matplotlib
 
 def save_to_csv(flats_data, filename="zxc.csv"):
     keys = flats_data[0].keys()
