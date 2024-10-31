@@ -1,8 +1,1 @@
-# parcing-cian
-Код с помощью которого можно парсить данные с сайта cian.ru
-# Установка
-Для установки зависимостей выполните команду:
-pip install -r requirements.txt
-# Запуск
-Для запуска приложения выполните команду:
-python main.py
+Google Colabe: https://colab.research.google.com/drive/1D-dnidKPIJTqJXqSYYa4zonALmLbK3Ug?usp=sharing
